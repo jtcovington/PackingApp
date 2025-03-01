@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Get Aweigh: Packing Lists &amp; Reminders</string>
+    <string name="duration_label">Duration: %1$d days</string>
+    <string name="duration_error">Invalid Dates</string>
+    <string name="duration_invalid">Invalid Dates</string>
+</resources>
