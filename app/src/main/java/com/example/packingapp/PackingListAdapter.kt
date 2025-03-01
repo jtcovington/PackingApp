@@ -12,9 +12,9 @@ import androidx.recyclerview.widget.RecyclerView
 
 // Adapter for the RecyclerView to display PackingItems
 class PackingListAdapter(
-    private var items: List<PackingItem>,
-    private val onItemUpdate: (PackingItem) -> Unit, // Callback for updates
-    private val onDeleteItem: (PackingItem) -> Unit // Callback for Deletion
+    private var items: List<PackingItemAndCategory>,
+    private val onItemUpdate: (PackingItem) -> Unit,
+    private val onDeleteItem: (PackingItem) -> Unit
 ) : RecyclerView.Adapter<PackingListAdapter.ViewHolder>() {
 
     // ViewHolder class
@@ -25,7 +25,6 @@ class PackingListAdapter(
         val deleteButton: Button = itemView.findViewById(R.id.deleteButton)
     }
 
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_packing_list, parent, false)
         return ViewHolder(view)
@@ -34,47 +33,73 @@ class PackingListAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val currentItem = items[position]
 
-        holder.textViewItemName.text = currentItem.name
-        holder.textViewCategory.text = "(${currentItem.category})"
+        holder.textViewItemName.text = currentItem.packingItem.name
+        holder.textViewCategory.text = "(${currentItem.category?.categoryName ?: "Unknown"})"
 
-        // Set the checkbox state based on the item's packed status
-        holder.checkBoxPacked.isChecked = currentItem.packed
+        // *** CRUCIAL FIX: Remove any existing listener BEFORE setting isChecked ***
+        holder.checkBoxPacked.setOnCheckedChangeListener(null)
 
-        // Set an OnCheckedChangeListener for the checkbox
+        // NOW set the checked state
+        holder.checkBoxPacked.isChecked = currentItem.packingItem.packed
+
+        // Set the new listener
         holder.checkBoxPacked.setOnCheckedChangeListener { _, isChecked ->
-            // Update the 'packed' status of the current item
-            currentItem.packed = isChecked
-            // Call the update callback
-            onItemUpdate(currentItem)
+            currentItem.packingItem.packed = isChecked
+            onItemUpdate(currentItem.packingItem)
         }
-        //add delete button listener
+
         holder.deleteButton.setOnClickListener {
-            onDeleteItem(currentItem)
+            onDeleteItem(currentItem.packingItem)
         }
-        updateItemTextStyle(holder, currentItem.packed)
+        updateItemTextStyle(holder, currentItem.packingItem.packed)
     }
+
     override fun getItemCount(): Int = items.size
 
     // Method to update the list
-    fun updateList(newItems: List<PackingItem>) {
+    fun updateList(newItems: List<PackingItemAndCategory>) {
         items = newItems
-        notifyDataSetChanged() // Efficient update
+        notifyDataSetChanged()
     }
+
     private fun updateItemTextStyle(holder: ViewHolder, isChecked: Boolean) {
         val context = holder.itemView.context
 
         if (isChecked) {
-            holder.textViewItemName.paintFlags = holder.textViewItemName.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
-            holder.textViewCategory.paintFlags = holder.textViewCategory.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
-            holder.textViewItemName.setTextColor(ContextCompat.getColor(context, R.color.grayed_out))
-            holder.textViewCategory.setTextColor(ContextCompat.getColor(context, R.color.grayed_out))
-
+            holder.textViewItemName.paintFlags =
+                holder.textViewItemName.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
+            holder.textViewCategory.paintFlags =
+                holder.textViewCategory.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
+            holder.textViewItemName.setTextColor(
+                ContextCompat.getColor(
+                    context,
+                    R.color.grayed_out
+                )
+            )
+            holder.textViewCategory.setTextColor(
+                ContextCompat.getColor(
+                    context,
+                    R.color.grayed_out
+                )
+            )
 
         } else {
-            holder.textViewItemName.paintFlags = holder.textViewItemName.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
-            holder.textViewCategory.paintFlags = holder.textViewCategory.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
-            holder.textViewItemName.setTextColor(ContextCompat.getColor(context, android.R.color.black))
-            holder.textViewCategory.setTextColor(ContextCompat.getColor(context, R.color.light_gray)) // Use a defined color resource
+            holder.textViewItemName.paintFlags =
+                holder.textViewItemName.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
+            holder.textViewCategory.paintFlags =
+                holder.textViewCategory.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
+            holder.textViewItemName.setTextColor(
+                ContextCompat.getColor(
+                    context,
+                    android.R.color.black
+                )
+            )
+            holder.textViewCategory.setTextColor(
+                ContextCompat.getColor(
+                    context,
+                    R.color.black
+                )
+            ) // Use a defined color resource
         }
     }
 }

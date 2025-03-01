@@ -1,6 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Get Aweigh: Packing Lists &amp; Reminders</string>
     <string name="duration_label">Duration: %1$d days</string>
     <string name="duration_error">Invalid Dates</string>
     <string name="duration_invalid">Invalid Dates</string>
+
+    <string name="add_item_title">Add Item</string>
+    <string name="item_name_hint">Item Name</string>
+    <string name="quantity_hint">Quantity</string>
+    <string name="packed_switch_label">Packed</string>
+    <string name="cancel_button_label">Cancel</string>
+    <string name="add_button_label">Add Item</string>
+    <string name="select_dates_label">Select Dates</string>
+    <string name="work_label">Work</string>
+    <string name="leisure_label">Leisure</string>
+    <string name="combined_label">Combined</string>
+    <string name="item_name_label">Item Name</string>
+    <string name="quanity_label">Quantity</string>
+    <string name="delete_button_label">X</string>
+    <string name="category_label">(%1$s)</string>
+    <string name="date_range_label">%1$s - %2$s</string>
+
 </resources>

@@ -1,3 +1,4 @@
+// app/src/main/java/com/example/packingapp/MainActivity.kt
 package com.example.packingapp
 
 import android.os.Bundle
@@ -24,18 +25,20 @@ class MainActivity : AppCompatActivity() {
     private lateinit var recyclerViewPackingList: RecyclerView
     private val dateFormatter = SimpleDateFormat("MM/dd/yyyy", Locale.US)
 
-    //Variables to hold start and end
+    // Variables to hold start and end dates
     private var startDate: Long? = null
     private var endDate: Long? = null
 
-    private var selectedTripType = "Work" // Default trip type
-
-    //Add Database and Dao
+    // Database, DAO, and manager
     private lateinit var database: PackingDatabase
     private lateinit var packingItemDao: PackingItemDao
+    private lateinit var packingListManager: PackingListManager // New manager class
     private lateinit var adapter: PackingListAdapter
-    private lateinit var editTextNewItem : EditText
-    private lateinit var editTextQuantity : EditText
+    private lateinit var editTextNewItem: EditText
+    private lateinit var editTextQuantity: EditText
+
+    // Variable to store the current packing list ID
+    private var currentListId: Int = 1 // Default to the first list
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,22 +53,26 @@ class MainActivity : AppCompatActivity() {
         val buttonAddItem: Button = findViewById(R.id.buttonAddItem)
         editTextQuantity = findViewById(R.id.editTextQuantity)
 
-        // Initialize database and DAO
+        // Initialize database, DAO, and manager
         database = PackingDatabase.getDatabase(this)
         packingItemDao = database.packingItemDao()
+        packingListManager = PackingListManager(packingItemDao) // Initialize the manager
 
-        // Set up RecyclerView, and add update and delete callbacks
+        // Set up RecyclerView with adapter and callbacks
         recyclerViewPackingList.layoutManager = LinearLayoutManager(this)
         adapter = PackingListAdapter(listOf(), { updatedItem ->
+            // Update callback - when an item is checked/unchecked
             lifecycleScope.launch(Dispatchers.IO) {
                 packingItemDao.update(updatedItem)
             }
-        }, {packingItem ->
-            lifecycleScope.launch(Dispatchers.IO){
+        }, { packingItem ->
+            // Delete callback - when an item is deleted
+            lifecycleScope.launch(Dispatchers.IO) {
                 packingItemDao.delete(packingItem)
-                loadPackingListItems() //reload list on delete
+                withContext(Dispatchers.Main) {
+                    loadPackingListItems() // Reload list after deletion
+                }
             }
-
         })
         recyclerViewPackingList.adapter = adapter
 
@@ -74,72 +81,119 @@ class MainActivity : AppCompatActivity() {
             showDateRangePicker()
         }
 
-        // Set listener for Radio Group
-        radioGroupTripType.setOnCheckedChangeListener { _, checkedId ->
-            when (checkedId) {
-                R.id.radioButtonWork -> selectedTripType = "Work"
-                R.id.radioButtonLeisure -> selectedTripType = "Leisure"
-                R.id.radioButtonCombined -> selectedTripType = "Combined"
-            }
-            //Update the list based on Radio Selection, and recalculate
-            calculateAndDisplayDuration()
-        }
-
-        //Add Item button
-        buttonAddItem.setOnClickListener{
+        // Add item button click listener
+        buttonAddItem.setOnClickListener {
             addNewItem()
         }
 
-        // Load initial data from the database
+        // Load the default packing list
         loadPackingListItems()
 
+        // Get the dates from the current packing list
+        lifecycleScope.launch {
+            loadCurrentPackingListDates()
+        }
     }
-
     private fun showDateRangePicker() {
-        //Build the date range picker
-        val dateRangePicker = MaterialDatePicker.Builder.dateRangePicker()
-            .setTitleText("Select Trip Dates")
-            .build()
+        try {
+            // Create a builder with our custom theme
+            val dateRangePicker = MaterialDatePicker.Builder.dateRangePicker()
+                .setTitleText("Select Trip Dates")
+                .setTheme(R.style.CustomMaterialDatePickerTheme)
+                .build()
 
-        //Show the dialog
-        dateRangePicker.show(supportFragmentManager, "DATE_RANGE_PICKER")
+            // Set the selection listener
+            dateRangePicker.addOnPositiveButtonClickListener { selection ->
+                try {
+                    startDate = selection.first
+                    endDate = selection.second
 
-        //Set the listener to receive the selected dates
-        dateRangePicker.addOnPositiveButtonClickListener { dateRange ->
-            // dateRange is a Pair<Long, Long> representing start and end dates in milliseconds
-            startDate = dateRange.first
-            endDate = dateRange.second
+                    // Update the UI with formatted dates
+                    val startDateStr = dateFormatter.format(Date(startDate!!))
+                    val endDateStr = dateFormatter.format(Date(endDate!!))
+                    textViewDateRange.text = getString(R.string.date_range_label, startDateStr, endDateStr)
 
-            //Format and display the selected dates
-            val startDateString = dateFormatter.format(Date(startDate!!))
-            val endDateString = dateFormatter.format(Date(endDate!!))
-            textViewDateRange.text = "$startDateString - $endDateString" // Display "Start Date - End Date"
+                    // Calculate and display the duration
+                    calculateAndDisplayDuration()
 
-            //Calculate and display the duration, and refresh list
-            calculateAndDisplayDuration()
+                    // Update the current packing list with the new dates
+                    updatePackingListDates()
+                } catch (e: Exception) {
+                    Log.e("MainActivity", "Error processing date selection", e)
+                    textViewDateRange.text = "Error setting dates"
+                }
+            }
+
+            // Show the dialog
+            dateRangePicker.show(supportFragmentManager, "DATE_RANGE_PICKER")
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Error showing date picker", e)
+            textViewDateRange.text = "Could not show date picker"
         }
-
-        // Optional: Handle cancellation and negative button clicks if needed.
-        dateRangePicker.addOnNegativeButtonClickListener {
-            Log.d("MainActivity", "Date Range Selection Cancelled (Negative Button)")
-        }
-        dateRangePicker.addOnCancelListener{
-            Log.d("MainActivity", "Date Range Selection Cancelled (Dialog Dismissed)")
-        }
-
     }
 
+    /**
+     * Update the current packing list with new dates
+     */
+    private fun updatePackingListDates() {
+        try {
+            lifecycleScope.launch(Dispatchers.IO) {
+                // Use the manager to update dates with null safety
+                packingListManager.updatePackingListDates(currentListId, startDate, endDate)
+            }
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Error updating packing list dates", e)
+        }
+    }
 
+    /**
+     * Load dates from the current packing list and update the UI
+     */
+    private fun loadCurrentPackingListDates() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val packingList = packingItemDao.getPackingListById(currentListId)
+
+                if (packingList != null) {
+                    startDate = packingList.tripStartDate
+                    endDate = packingList.tripEndDate
+
+                    // Update UI on the main thread with null safety
+                    withContext(Dispatchers.Main) {
+                        if (startDate != null && endDate != null) {
+                            try {
+                                val startDateStr = dateFormatter.format(Date(startDate!!))
+                                val endDateStr = dateFormatter.format(Date(endDate!!))
+                                textViewDateRange.text = getString(R.string.date_range_label, startDateStr, endDateStr)
+                                calculateAndDisplayDuration()
+                            } catch (e: Exception) {
+                                Log.e("MainActivity", "Error formatting dates", e)
+                                textViewDateRange.text = "Invalid dates"
+                            }
+                        } else {
+                            textViewDateRange.text = getString(R.string.select_dates_label)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Error loading packing list dates", e)
+                withContext(Dispatchers.Main) {
+                    textViewDateRange.text = getString(R.string.select_dates_label)
+                }
+            }
+        }
+    }
+    /**
+     * Calculate the duration of the trip in days and display it
+     */
     private fun calculateAndDisplayDuration() {
-        //Check if dates are selected
-        if (startDate != null && endDate != null){
+        // Check if dates are selected
+        if (startDate != null && endDate != null) {
             try {
                 val diffInMilliseconds = endDate!! - startDate!!
                 val diffInDays = (diffInMilliseconds / (1000 * 60 * 60 * 24)).toInt()
 
                 textViewDuration.text = getString(R.string.duration_label, diffInDays)
-                loadPackingListItems() //Reload from database
-
             } catch (e: Exception) {
                 textViewDuration.text = getString(R.string.duration_invalid)
             }
@@ -147,6 +201,10 @@ class MainActivity : AppCompatActivity() {
             textViewDuration.text = "" // Clear the duration if dates are not selected
         }
     }
+
+    /**
+     * Add a new item to the current packing list
+     */
     private fun addNewItem() {
         val itemName = editTextNewItem.text.toString().trim()
         val quantityString = editTextQuantity.text.toString().trim()
@@ -154,55 +212,33 @@ class MainActivity : AppCompatActivity() {
         if (itemName.isNotEmpty() && quantityString.isNotEmpty()) {
             val quantity = quantityString.toIntOrNull() ?: 1
 
-            val days = if (startDate != null && endDate != null) {
-                ((endDate!! - startDate!!) / (1000 * 60 * 60 * 24)).toInt()
-            } else {
-                5 // Default duration
-            }
-
-            // Use baseQuantity and quantityPerDay when adding a *new* item
-            val newItem = PackingItem(
-                name = itemName,
-                category = "User Added", // Or get category from user input, such as a drop down.
-                packed = false,
-                quantity = 0, // Set initial quantity to 0; it will be calculated
-                tripType = selectedTripType,
-                tripDuration = days, // Use calculated or default days
-                baseQuantity = quantity, // Use entered quantity as base
-                quantityPerDay = 0 // Default to 0; let user modify if needed
-            )
-
+            // Use the PackingListManager to add a new item
             lifecycleScope.launch(Dispatchers.IO) {
-                packingItemDao.insert(newItem)
-                withContext(Dispatchers.Main){
-                    loadPackingListItems() // Reload list after adding a new item
+                packingListManager.addItemToList(
+                    listId = currentListId,
+                    name = itemName,
+                    categoryId = 8, // "Other" category by default
+                    quantity = quantity,
+                    baseQuantity = quantity,
+                    quantityPerDay = 0
+                )
+
+                withContext(Dispatchers.Main) {
+                    loadPackingListItems() // Reload list after adding
+                    editTextNewItem.text.clear() // Clear input fields
+                    editTextQuantity.text.clear()
                 }
-
             }
-
-            editTextNewItem.text.clear()
-            editTextQuantity.text.clear()
         }
     }
 
-    // Load items, using tripType and Duration
+    /**
+     * Load all items for the current packing list and update the adapter
+     */
     private fun loadPackingListItems() {
         lifecycleScope.launch {
-            // Calculate duration based on selected dates
-            val days = if (startDate != null && endDate != null) {
-                ((endDate!! - startDate!!) / (1000 * 60 * 60 * 24)).toInt()
-            } else {
-                5 // A default
-            }
-
-            Log.d("MainActivity", "loadPackingListItems: tripType=$selectedTripType, days=$days")
-
-            packingItemDao.getItemsForTrip(selectedTripType, days).collect { items ->
-                // Calculate the quantity for each item *before* updating the adapter
-                val updatedItems = items.map { item ->
-                    item.copy(quantity = item.baseQuantity + (item.quantityPerDay * days))
-                }
-                adapter.updateList(updatedItems) // Update the adapter with new list
+            packingItemDao.getItemsForList(currentListId).collect { items ->
+                adapter.updateList(items)
             }
         }
     }

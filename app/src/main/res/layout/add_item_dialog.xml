@@ -10,7 +10,7 @@
         android:id="@+id/dialog_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Add Item"
+        android:text="@string/add_item_title"
         android:textSize="18sp"
         android:textStyle="bold"
         android:gravity="center"
@@ -27,8 +27,9 @@
         android:id="@+id/edit_text_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Your Item Name"
+        android:hint="@string/item_name_hint"
         android:inputType="textCapWords"
+        android:autofillHints="name"
         style="@style/EditTextStyle"/>
 
     <Spinner
@@ -43,15 +44,16 @@
         android:id="@+id/edit_text_quantity"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Quantity"
+        android:hint="@string/quantity_hint"
         android:inputType="number"
+        android:autofillHints="postalCode"
         style="@style/EditTextStyle"
         />
-    <Switch
+    <com.google.android.material.materialswitch.MaterialSwitch
         android:id="@+id/packed_switch"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Packed" />
+        android:text="@string/packed_switch_label" />
 
     <View
         android:layout_width="match_parent"
@@ -70,15 +72,15 @@
             android:id="@+id/button_cancel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Cancel"
-            style="?attr/materialButtonOutlinedStyle"
+            android:text="@string/cancel_button_label"
+            style="?attr/borderlessButtonStyle"
             android:textColor="?attr/colorPrimary"/>
 
         <Button
             android:id="@+id/button_add"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Add Item"
+            android:text="@string/add_button_label"
             android:layout_marginStart="8dp"
             android:textColor="@android:color/white"
             android:backgroundTint="?attr/colorPrimary"/>

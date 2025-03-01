@@ -1,3 +1,4 @@
+// app/src/main/java/com/example/packingapp/PackingDatabase.kt
 package com.example.packingapp
 
 import android.content.Context
@@ -11,10 +12,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-@Database(entities = [PackingItem::class], version = 2, exportSchema = false)
+@Database(entities = [PackingItem::class, Category::class, PackingList::class], version = 3, exportSchema = false) // Increased version, added entities
 abstract class PackingDatabase : RoomDatabase() {
 
-    abstract fun packingItemDao(): PackingItemDao
+    abstract fun packingItemDao(): PackingItemDao // No changes to the DAO accessor
+
     companion object {
         @Volatile
         private var INSTANCE: PackingDatabase? = null
@@ -26,7 +28,7 @@ abstract class PackingDatabase : RoomDatabase() {
                     PackingDatabase::class.java,
                     "packing_database"
                 )
-                    .fallbackToDestructiveMigration()
+                    .fallbackToDestructiveMigration() // Destructive migration for development
                     .addCallback(object : RoomDatabase.Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)
@@ -40,120 +42,99 @@ abstract class PackingDatabase : RoomDatabase() {
 
                                 database.withTransaction {
                                     val dao = database.packingItemDao()
+                                    //PREVIOUS DATA POPULATION REMOVED
+                                    // Add initial categories *and* their list IDs
+                                    dao.insert(Category(categoryName = "Clothing", listId = 1)) // CategoryID 1
+                                    dao.insert(Category(categoryName = "Uniforms", listId = 1)) // CategoryID 2
+                                    dao.insert(Category(categoryName = "PT Gear", listId = 1))  // CategoryID 3
+                                    dao.insert(Category(categoryName = "Toiletries", listId = 1))// CategoryID 4
+                                    dao.insert(Category(categoryName = "Documents", listId = 1))// CategoryID 5
+                                    dao.insert(Category(categoryName = "Electronics", listId = 1))//CategoryID 6
+                                    dao.insert(Category(categoryName = "Room Items", listId = 1))// CategoryID 7
+                                    dao.insert(Category(categoryName = "Other", listId = 1))     // CategoryID 8
+
+                                    // Add a default packing list
+                                    val listId = dao.insert(PackingList(listName = "Default List", tripStartDate = null, tripEndDate = null)) // Use the returned listId
 
                                     Log.d("PackingDatabase", "Before inserting items")
+                                    //Add List ID to inserts
 
-// Work Trip Items (Corrected Inserts)
-                                    dao.insert(PackingItem(name = "Underwear (x1)", category = "Clothing", tripType = "Work", tripDuration = 1, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Underwear (x3)", category = "Clothing", tripType = "Work", tripDuration = 3, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Underwear (x5)", category = "Clothing", tripType = "Work", tripDuration = 5, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Underwear (x7)", category = "Clothing", tripType = "Work", tripDuration = 7, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Socks (x1)", category = "Clothing", tripType = "Work", tripDuration = 1, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Socks (x3)", category = "Clothing", tripType = "Work", tripDuration = 3, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Socks (x5)", category = "Clothing", tripType = "Work", tripDuration = 5, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Socks (x7)", category = "Clothing", tripType = "Work", tripDuration = 7, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Boots (x1)", category = "Clothing", tripType = "Work", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Gym shoes (x1)", category = "Clothing", tripType = "Work", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Uniform of the Day (x1)", category = "Uniforms", tripType = "Work", tripDuration = 1, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Uniform of the Day (x3)", category = "Uniforms", tripType = "Work", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "PT Gear (x1)", category = "PT Gear", tripType = "Work", tripDuration = 1, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "PT Gear (x3)", category = "PT Gear", tripType = "Work", tripDuration = 3, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "PT Gear (x5)", category = "PT Gear", tripType = "Work", tripDuration = 5, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "PT Gear (x7)", category = "PT Gear", tripType = "Work", tripDuration = 7, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Toothbrush", category = "Toiletries", tripType = "Work", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Toothpaste", category = "Toiletries", tripType = "Work", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Deodorant", category = "Toiletries", tripType = "Work", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Shampoo", category = "Toiletries", tripType = "Work", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Conditioner", category = "Toiletries", tripType = "Work", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Body Wash", category = "Toiletries", tripType = "Work", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Bath Robe", category = "Toiletries", tripType = "Work", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "CAC Card", category = "Documents", tripType = "Work", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Navy Cash Card", category = "Documents", tripType = "Work", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Passport", category = "Documents", tripType = "Work", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Computer", category = "Electronics", tripType = "Work", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Phone", category = "Electronics", tripType = "Work", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Headphones", category = "Electronics", tripType = "Work", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Charging Cables", category = "Electronics", tripType = "Work", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Pillow (x2)", category = "Room Items", tripType = "Work", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Sheets (x1)", category = "Room Items", tripType = "Work", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
+                                    // Work Trip Items
+                                    dao.insert(PackingItem(name = "Underwear", categoryId = 1, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 1))
+                                    dao.insert(PackingItem(name = "Socks", categoryId = 1, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 1))
+                                    dao.insert(PackingItem(name = "Boots", categoryId = 1, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Gym shoes", categoryId = 1, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Uniform of the Day", categoryId = 2, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "PT Gear", categoryId = 3, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 1))
+                                    dao.insert(PackingItem(name = "Toothbrush", categoryId = 4, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Toothpaste", categoryId = 4, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Deodorant", categoryId = 4, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Shampoo", categoryId = 4, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Conditioner", categoryId = 4, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Body Wash", categoryId = 4, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Bath Robe", categoryId = 4, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "CAC Card", categoryId = 5, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Navy Cash Card", categoryId = 5, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Passport", categoryId = 5, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Computer", categoryId = 6, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Phone", categoryId = 6, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Headphones", categoryId = 6, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Charging Cables", categoryId = 6, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Pillow", categoryId = 7, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Sheets", categoryId = 7, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+
                                     // Leisure Trip Items
-                                    dao.insert(PackingItem(name = "Casual Shirts (x1)", category = "Clothing", tripType = "Leisure", tripDuration = 1, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Casual Shirts (x3)", category = "Clothing", tripType = "Leisure", tripDuration = 3, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Casual Shirts (x5)", category = "Clothing", tripType = "Leisure", tripDuration = 5, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Casual Shirts (x7)", category = "Clothing", tripType = "Leisure", tripDuration = 7, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Pants/Shorts (x1)", category = "Clothing", tripType = "Leisure", tripDuration = 1, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Pants/Shorts (x3)", category = "Clothing", tripType = "Leisure", tripDuration = 3, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Pants/Shorts (x5)", category = "Clothing", tripType = "Leisure", tripDuration = 5, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Pants/Shorts (x7)", category = "Clothing", tripType = "Leisure", tripDuration = 7, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Underwear (x1)", category = "Clothing", tripType = "Leisure", tripDuration = 1, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Underwear (x3)", category = "Clothing", tripType = "Leisure", tripDuration = 3, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Underwear (x5)", category = "Clothing", tripType = "Leisure", tripDuration = 5, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Underwear (x7)", category = "Clothing", tripType = "Leisure", tripDuration = 7, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Socks (x1)", category = "Clothing", tripType = "Leisure", tripDuration = 1, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Socks (x3)", category = "Clothing", tripType = "Leisure", tripDuration = 3, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Socks (x5)", category = "Clothing", tripType = "Leisure", tripDuration = 5, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Socks (x7)", category = "Clothing", tripType = "Leisure", tripDuration = 7, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Shoes (x2)", category = "Clothing", tripType = "Leisure", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Swimsuit", category = "Clothing", tripType = "Leisure", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Toothbrush", category = "Toiletries", tripType = "Leisure", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Toothpaste", category = "Toiletries", tripType = "Leisure", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Deodorant", category = "Toiletries", tripType = "Leisure", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Shampoo", category = "Toiletries", tripType = "Leisure", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Conditioner", category = "Toiletries", tripType = "Leisure", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Sunscreen", category = "Toiletries", tripType = "Leisure", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Passport/ID", category = "Documents", tripType = "Leisure", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Tickets", category = "Documents", tripType = "Leisure", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Itinerary", category = "Documents", tripType = "Leisure", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Phone", category = "Electronics", tripType = "Leisure", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Camera", category = "Electronics", tripType = "Leisure", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Charger", category = "Electronics", tripType = "Leisure", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Casual Shirts", categoryId = 1, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 1))
+                                    dao.insert(PackingItem(name = "Pants/Shorts", categoryId = 1, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 1))
+                                    dao.insert(PackingItem(name = "Underwear", categoryId = 1, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 1))
+                                    dao.insert(PackingItem(name = "Socks", categoryId = 1, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 1))
+                                    dao.insert(PackingItem(name = "Shoes", categoryId = 1, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Swimsuit", categoryId = 1, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Toothbrush", categoryId = 4, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Toothpaste", categoryId = 4, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Deodorant", categoryId = 4, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Shampoo", categoryId = 4, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Conditioner", categoryId = 4, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Sunscreen", categoryId = 4, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Passport/ID", categoryId = 5, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Tickets", categoryId = 5, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Itinerary", categoryId = 5, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Phone", categoryId = 6, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Camera", categoryId = 6, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Charger", categoryId = 6, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+
                                     // Combined Trip Items
-                                    dao.insert(PackingItem(name = "Underwear (x1)", category = "Clothing", tripType = "Combined", tripDuration = 1, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Underwear (x3)", category = "Clothing", tripType = "Combined", tripDuration = 3, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Underwear (x5)", category = "Clothing", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Underwear (x7)", category = "Clothing", tripType = "Combined", tripDuration = 7, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Socks (x1)", category = "Clothing", tripType = "Combined", tripDuration = 1, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Socks (x3)", category = "Clothing", tripType = "Combined", tripDuration = 3, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Socks (x5)", category = "Clothing", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Socks (x7)", category = "Clothing", tripType = "Combined", tripDuration = 7, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Boots (x1)", category = "Clothing", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Gym shoes (x1)", category = "Clothing", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Casual Shirts (x1)", category = "Clothing", tripType = "Combined", tripDuration = 1, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Casual Shirts (x3)", category = "Clothing", tripType = "Combined", tripDuration = 3, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Casual Shirts (x5)", category = "Clothing", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Casual Shirts (x7)", category = "Clothing", tripType = "Combined", tripDuration = 7, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Pants/Shorts (x1)", category = "Clothing", tripType = "Combined", tripDuration = 1, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Pants/Shorts (x3)", category = "Clothing", tripType = "Combined", tripDuration = 3, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Pants/Shorts (x5)", category = "Clothing", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Pants/Shorts (x7)", category = "Clothing", tripType = "Combined", tripDuration = 7, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Uniform of the Day (x1)", category = "Uniforms", tripType = "Combined", tripDuration = 1, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Uniform of the Day (x3)", category = "Uniforms", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "PT Gear (x1)", category = "PT Gear", tripType = "Combined", tripDuration = 1, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "PT Gear (x3)", category = "PT Gear", tripType = "Combined", tripDuration = 3, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "PT Gear (x5)", category = "PT Gear", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "PT Gear (x7)", category = "PT Gear", tripType = "Combined", tripDuration = 7, baseQuantity = 1, quantityPerDay = 1))
-                                    dao.insert(PackingItem(name = "Toothbrush", category = "Toiletries", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Toothpaste", category = "Toiletries", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Deodorant", category = "Toiletries", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Shampoo", category = "Toiletries", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Conditioner", category = "Toiletries", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Body Wash", category = "Toiletries", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Bath Robe", category = "Toiletries", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Sunscreen", category = "Toiletries", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "CAC Card", category = "Documents", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Navy Cash Card", category = "Documents", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Passport", category = "Documents", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Tickets", category = "Documents", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0)) // Added for Combined
-                                    dao.insert(PackingItem(name = "Itinerary", category = "Documents", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0)) // Added for Combined
-                                    dao.insert(PackingItem(name = "Computer", category = "Electronics", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Phone", category = "Electronics", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Headphones", category = "Electronics", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Charging Cables", category = "Electronics", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Camera", category = "Electronics", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0)) // Added for Combined
-                                    dao.insert(PackingItem(name = "Pillow (x2)", category = "Room Items", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
-                                    dao.insert(PackingItem(name = "Sheets (x1)", category = "Room Items", tripType = "Combined", tripDuration = 5, baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Underwear", categoryId = 1, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 1))
+                                    dao.insert(PackingItem(name = "Socks", categoryId = 1, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 1))
+                                    dao.insert(PackingItem(name = "Boots", categoryId = 1, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Gym shoes", categoryId = 1, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Casual Shirts", categoryId = 1, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 1))
+                                    dao.insert(PackingItem(name = "Pants/Shorts", categoryId = 1, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 1))
+                                    dao.insert(PackingItem(name = "Uniform of the Day", categoryId = 2, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "PT Gear", categoryId = 3, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 1))
+                                    dao.insert(PackingItem(name = "Toothbrush", categoryId = 4, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Toothpaste", categoryId = 4, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Deodorant", categoryId = 4, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Shampoo", categoryId = 4, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Conditioner", categoryId = 4, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Body Wash", categoryId = 4, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Bath Robe", categoryId = 4, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Sunscreen", categoryId = 4, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "CAC Card", categoryId = 5, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Navy Cash Card", categoryId = 5, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Passport", categoryId = 5, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Tickets", categoryId = 5, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Itinerary", categoryId = 5, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Computer", categoryId = 6, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Phone", categoryId = 6, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Headphones", categoryId = 6, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Charging Cables", categoryId = 6, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Camera", categoryId = 6, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Pillow", categoryId = 7, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
+                                    dao.insert(PackingItem(name = "Sheets", categoryId = 7, listId = listId.toInt(), baseQuantity = 1, quantityPerDay = 0))
 
                                     Log.d("PackingDatabase", "After inserting items")
+
                                 }
                             }
                         }
